@@ -1,4 +1,11 @@
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 1. Create an OpenGL program.
@@ -13,7 +20,7 @@ public class ShaderProgram {
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
-
+    private final Map<String, Integer> uniforms = new HashMap<>();
     /**
      * Creates the OpenGL program.
      * @throws Exception
@@ -25,6 +32,23 @@ public class ShaderProgram {
         }
     }
 
+    public void createUniform(String uniformName) throws Exception {
+        int uniformLocation = GL30.glGetUniformLocation(programId, uniformName);
+        if (uniformLocation < 0) {
+            throw new Exception("Could not find uniform: " + uniformName);
+        }
+        uniforms.put(uniformName, uniformLocation);
+    }
+
+    public void setUniform(String uniformName, Matrix4f value) {
+        //Put the matrix into a float buffer.
+        //Use MemoryStack because the size of the data is small and not used beyond this method.
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer floatBuffer = stack.mallocFloat(16);
+            value.get(floatBuffer);
+            GL30.glUniformMatrix4fv(uniforms.get(uniformName), false, floatBuffer);
+        }
+    }
     /**
      * Load a vertex shader.
      * @param shaderCode

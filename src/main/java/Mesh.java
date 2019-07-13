@@ -59,6 +59,20 @@ public class Mesh {
 
     }
 
+    public void render() {
+        //Draw the mesh.
+        GL30.glBindVertexArray(vaoId);
+        GL30.glEnableVertexAttribArray(0);
+        GL30.glEnableVertexAttribArray(1);
+
+        GL30.glDrawElements(GL11.GL_TRIANGLES, vertexCount, GL11.GL_UNSIGNED_INT, 0);
+
+        //Restore state.
+        GL30.glDisableVertexAttribArray(0);
+        GL30.glDisableVertexAttribArray(1);
+        GL30.glBindVertexArray(0);
+    }
+
     public int getVaoId() {
         return vaoId;
     }

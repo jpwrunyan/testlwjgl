@@ -29,7 +29,7 @@ public class GameEngine implements Runnable {
 
     protected void init() throws Exception {
         window.init();
-        gameLogic.init();
+        gameLogic.init(window);
     }
 
     protected void gameLoop() {

@@ -1,3 +1,4 @@
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -6,8 +7,15 @@ import org.lwjgl.system.MemoryUtil;
 import utils.ShaderFileUtil;
 
 import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Renderer {
+    private static final float FOV = (float) Math.toRadians(60f);
+    private static final float Z_NEAR = 0.01f;
+    private static final float Z_FAR = 1000f;
+    //private Matrix4f projectionMatrix;
+    private final Transformation transformation = new Transformation();
 
     private ShaderProgram shaderProgram;
     //private int vaoId;
@@ -17,7 +25,14 @@ public class Renderer {
 
     }
 
-    public void init() throws Exception {
+    private static Matrix4f createProjectionMatrix(int width, int height) {
+        float aspectRatio = width / height;
+        return new Matrix4f().perspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+    }
+
+    public void init(Window window) throws Exception {
+
+
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(
             ShaderFileUtil.loadResource("/vertex.vs")
@@ -71,21 +86,48 @@ public class Renderer {
             MemoryUtil.memFree(verticesBuffer);
         }
         */
+
+        //float aspectRatio = (float) window.getWidth() / window.getHeight();
+        //projectionMatrix = new Matrix4f().perspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+
+        //Initializes uniforms for projection and world matrices to be accessed by shader programs' native code.
+        shaderProgram.createUniform("projectionMatrix");
+        shaderProgram.createUniform("worldMatrix");
+
+        window.setClearColor(0, 0, 0, 0);
     }
 
     public void clear() {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Window window, Mesh mesh) {
+    public void render(Window window, DisplayObject[] displayObjects) {
         clear();
 
         if (window.isResized()) {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResized(false);
-        }
 
+        }
         shaderProgram.bind();
+
+        //Update projection matrix:
+        Matrix4f projectionMatrix = transformation.createProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
+        shaderProgram.setUniform("projectionMatrix", projectionMatrix);
+
+        //Render each DisplayObject:
+        for (DisplayObject displayObject : displayObjects) {
+            //Set world matrix for this item:
+            //This name doesn't feel right.
+            Matrix4f worldMatrix = transformation.createWorldMatrix(
+                displayObject.getPosition(),
+                displayObject.getRotation(),
+                displayObject.getScale()
+            );
+            shaderProgram.setUniform("worldMatrix", worldMatrix);
+            //Render the mesh for this DisplayObject.
+            displayObject.getMesh().render();
+        }
 
         /*
         Moved to Mesh class.
@@ -98,6 +140,7 @@ public class Renderer {
         GL30.glDrawArrays(GL11.GL_TRIANGLES, 0, 3);
         */
 
+        /*
         //Draw the mesh.
         GL30.glBindVertexArray(mesh.getVaoId());
         //Get vertices.
@@ -111,8 +154,9 @@ public class Renderer {
 
         //Restore state.
         GL30.glDisableVertexAttribArray(0);
+        GL30.glDisableVertexAttribArray(1);
         GL30.glBindVertexArray(0);
-
+        */
         shaderProgram.unbind();
     }
 
@@ -134,4 +178,6 @@ public class Renderer {
         GL30.glDeleteVertexArrays(vaoId);
         */
     }
+
+
 }

@@ -26,6 +26,8 @@ public class Main {
 
 /**
  * DummyGame class
+ * Honestly, this should really be the main thread that the game engine runs on.
+ * Being a separate class feels silly.
  */
 class TestGameLogic implements GameLogic {
 
@@ -33,30 +35,22 @@ class TestGameLogic implements GameLogic {
     private float color = 0.0f;
     private final Renderer renderer;
     private Mesh mesh;
+    private Mesh mesh2;
 
     public TestGameLogic() {
         renderer = new Renderer();
     }
 
     @Override
-    public void init() throws Exception {
-        renderer.init();
-        /*
-        float[] positions = new float[]{
-                -0.5f,  0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                0.5f,  0.5f, 0.0f,
-                0.5f,  0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                0.5f, -0.5f, 0.0f,
-        };
-        */
+    public void init(Window window) throws Exception {
+        renderer.init(window);
+
         //By the book...
         float[] positions = new float[]{
-            -0.5f,  0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.5f,  0.5f, 0.0f,
+            -0.5f,  0.5f, -1.05f,
+            -0.5f, -0.5f, -1.05f,
+            0.5f, -0.5f, -1.05f,
+            0.5f,  0.5f, -1.05f,
         };
         int[] indices = new int[]{0, 1, 3, 3, 1, 2,};
 
@@ -78,6 +72,23 @@ class TestGameLogic implements GameLogic {
                 0.0f, 0.5f, 0.5f,
         };
         mesh = new Mesh(positions, indices, colors);
+
+        //I can also do it this way if I want...
+        positions = new float[]{
+                -1f,  0f, -1.05f,
+                0f,  0f, -1.05f,
+                -1f, -1f, -1.05f,
+                0f, -1f, -1.05f,
+
+        };
+        indices = new int[]{0, 1, 2, 2, 1, 3};
+        colors = new float[]{
+                .71f, 0.0f, 0.0f,
+                .71f, 0.25f, 0.0f,
+                .71f, 0.0f, 0.25f,
+                .7f, 0.25f, 0.25f,
+        };
+        mesh2 = new Mesh(positions, indices, colors);
     }
 
     @Override
@@ -114,7 +125,15 @@ class TestGameLogic implements GameLogic {
         */
 
         window.setClearColor(color, color, color, 0.0f);
-        renderer.render(window, mesh);
+        //renderer.clear();
+
+        DisplayObject[] displayObjects = new DisplayObject[]{
+            new DisplayObject(mesh).setRotation(0, 0, 10),
+            new DisplayObject(mesh2).setRotation(20, 0, 0)
+        };
+
+        renderer.render(window, displayObjects);
+        //renderer.render(window, mesh2);
     }
 
     @Override

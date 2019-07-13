@@ -19,7 +19,8 @@ public class Window {
         this.width = width;
         this.height = height;
         this.vSync = vSync;
-        this.resized = false;
+        //Initialize as resized.
+        this.resized = true;
     }
 
     public void init() {

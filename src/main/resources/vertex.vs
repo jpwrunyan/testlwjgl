@@ -9,7 +9,11 @@ layout (location=1) in vec3 inColor;
 
 out vec3 color;
 
+/* Get a variable set in LWJGL */
+uniform mat4 projectionMatrix;
+uniform mat4 worldMatrix;
+
 void main() {
-    gl_Position = vec4(position, 1.0);
+    gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
     color = inColor;
 }
