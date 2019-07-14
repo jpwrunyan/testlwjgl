@@ -92,7 +92,9 @@ public class Renderer {
 
         //Initializes uniforms for projection and world matrices to be accessed by shader programs' native code.
         shaderProgram.createUniform("projectionMatrix");
-        shaderProgram.createUniform("worldMatrix");
+        //shaderProgram.createUniform("worldMatrix");
+        shaderProgram.createUniform("modelViewMatrix");
+        shaderProgram.createUniform("texture_sampler");
 
         window.setClearColor(0, 0, 0, 0);
     }
@@ -101,8 +103,11 @@ public class Renderer {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Window window, DisplayObject[] displayObjects) {
+    public void render(Window window, DisplayObject[] displayObjects, Camera camera) {
         clear();
+
+        //Just a test that matrix transform works.
+        //camera.movePosition(0.001f, 0.001f, 0.01f);
 
         if (window.isResized()) {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
@@ -115,8 +120,15 @@ public class Renderer {
         Matrix4f projectionMatrix = transformation.createProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
         shaderProgram.setUniform("projectionMatrix", projectionMatrix);
 
+        //Update view matrix:
+        Matrix4f viewMatrix = transformation.createViewMatrix(camera);
+
+        //Set a global texture for now.
+        shaderProgram.setUniform("texture_sampler", 0);
+
         //Render each DisplayObject:
         for (DisplayObject displayObject : displayObjects) {
+            /*
             //Set world matrix for this item:
             //This name doesn't feel right.
             Matrix4f worldMatrix = transformation.createWorldMatrix(
@@ -125,6 +137,11 @@ public class Renderer {
                 displayObject.getScale()
             );
             shaderProgram.setUniform("worldMatrix", worldMatrix);
+            */
+            //Set the model view matrix for this DisplayObject.
+            Matrix4f modelViewMatrix = transformation.createModelViewMatrix(displayObject, viewMatrix);
+            shaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+
             //Render the mesh for this DisplayObject.
             displayObject.getMesh().render();
         }

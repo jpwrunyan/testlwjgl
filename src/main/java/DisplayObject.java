@@ -22,10 +22,11 @@ public class DisplayObject {
         return position;
     }
 
-    public void setPosition(float x, float y, float z) {
+    public DisplayObject setPosition(float x, float y, float z) {
         position.x = x;
         position.y = y;
         position.z = z;
+        return this;
     }
 
     public float getScale() {

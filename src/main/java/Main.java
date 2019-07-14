@@ -1,3 +1,5 @@
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import utils.ShaderFileUtil;
@@ -30,69 +32,135 @@ public class Main {
  * Being a separate class feels silly.
  */
 class TestGameLogic implements GameLogic {
+    private static final float CAMERA_POS_STEP = 0.01f;
+    private static final float MOUSE_SENSITIVITY = 0.2f;
+
+    private final Camera camera = new Camera();
+    private final Vector3f cameraPosChange = new Vector3f(0, 0, 0);
+
+    private final Renderer renderer = new Renderer();
+    DisplayObject[] displayObjects;
 
     private int direction = 0;
     private float color = 0.0f;
-    private final Renderer renderer;
-    private Mesh mesh;
-    private Mesh mesh2;
 
     public TestGameLogic() {
-        renderer = new Renderer();
+        //Empty constructor.
     }
 
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
+        // Create the Mesh
+        float[] positions = new float[] {
+            // V0
+            -0.5f, 0.5f, 0.5f,
+            // V1
+            -0.5f, -0.5f, 0.5f,
+            // V2
+            0.5f, -0.5f, 0.5f,
+            // V3
+            0.5f, 0.5f, 0.5f,
+            // V4
+            -0.5f, 0.5f, -0.5f,
+            // V5
+            0.5f, 0.5f, -0.5f,
+            // V6
+            -0.5f, -0.5f, -0.5f,
+            // V7
+            0.5f, -0.5f, -0.5f,
 
-        //By the book...
-        float[] positions = new float[]{
-            -0.5f,  0.5f, -1.05f,
-            -0.5f, -0.5f, -1.05f,
-            0.5f, -0.5f, -1.05f,
-            0.5f,  0.5f, -1.05f,
-        };
-        int[] indices = new int[]{0, 1, 3, 3, 1, 2,};
+            // For text coords in top face
+            // V8: V4 repeated
+            -0.5f, 0.5f, -0.5f,
+            // V9: V5 repeated
+            0.5f, 0.5f, -0.5f,
+            // V10: V0 repeated
+            -0.5f, 0.5f, 0.5f,
+            // V11: V3 repeated
+            0.5f, 0.5f, 0.5f,
 
-        /*
-        //I can also do it this way if I want...
-        float[] positions = new float[]{
-                -0.5f,  0.5f, 0.0f,
-                0.5f,  0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                0.5f, -0.5f, 0.0f,
+            // For text coords in right face
+            // V12: V3 repeated
+            0.5f, 0.5f, 0.5f,
+            // V13: V2 repeated
+            0.5f, -0.5f, 0.5f,
 
-        };
-        int[] indices = new int[]{0, 1, 2, 2, 1, 3};
-        */
-        float[] colors = new float[]{
-                0.5f, 0.0f, 0.0f,
-                0.0f, 0.5f, 0.0f,
-                0.0f, 0.0f, 0.5f,
-                0.0f, 0.5f, 0.5f,
-        };
-        mesh = new Mesh(positions, indices, colors);
+            // For text coords in left face
+            // V14: V0 repeated
+            -0.5f, 0.5f, 0.5f,
+            // V15: V1 repeated
+            -0.5f, -0.5f, 0.5f,
 
-        //I can also do it this way if I want...
-        positions = new float[]{
-                -1f,  0f, -1.05f,
-                0f,  0f, -1.05f,
-                -1f, -1f, -1.05f,
-                0f, -1f, -1.05f,
+            // For text coords in bottom face
+            // V16: V6 repeated
+            -0.5f, -0.5f, -0.5f,
+            // V17: V7 repeated
+            0.5f, -0.5f, -0.5f,
+            // V18: V1 repeated
+            -0.5f, -0.5f, 0.5f,
+            // V19: V2 repeated
+            0.5f, -0.5f, 0.5f
+        };
+        float[] textCoords = new float[]{
+            0.0f, 0.0f,
+            0.0f, 0.5f,
+            0.5f, 0.5f,
+            0.5f, 0.0f,
 
+            0.0f, 0.0f,
+            0.5f, 0.0f,
+            0.0f, 0.5f,
+            0.5f, 0.5f,
+
+            // For text coords in top face
+            0.0f, 0.5f,
+            0.5f, 0.5f,
+            0.0f, 1.0f,
+            0.5f, 1.0f,
+
+            // For text coords in right face
+            0.0f, 0.0f,
+            0.0f, 0.5f,
+
+            // For text coords in left face
+            0.5f, 0.0f,
+            0.5f, 0.5f,
+
+            // For text coords in bottom face
+            0.5f, 0.0f,
+            1.0f, 0.0f,
+            0.5f, 0.5f,
+            1.0f, 0.5f,
         };
-        indices = new int[]{0, 1, 2, 2, 1, 3};
-        colors = new float[]{
-                .71f, 0.0f, 0.0f,
-                .71f, 0.25f, 0.0f,
-                .71f, 0.0f, 0.25f,
-                .7f, 0.25f, 0.25f,
+        int[] indices = new int[]{
+            // Front face
+            0, 1, 3, 3, 1, 2,
+            // Top Face
+            8, 10, 11, 9, 8, 11,
+            // Right face
+            12, 13, 7, 5, 12, 7,
+            // Left face
+            14, 15, 6, 4, 14, 6,
+            // Bottom face
+            16, 18, 19, 17, 16, 19,
+            // Back face
+            4, 6, 7, 5, 4, 7
         };
-        mesh2 = new Mesh(positions, indices, colors);
+        Texture texture = new Texture("/grassblock.png");
+        Mesh cubeMesh = new Mesh(positions, indices, textCoords, texture);
+        displayObjects = new DisplayObject[]{
+            new DisplayObject(
+                cubeMesh
+            ).setPosition(0, 0, -2),
+            new DisplayObject(
+                cubeMesh
+            ).setPosition(2, 2, -4)
+        };
     }
 
     @Override
-    public void input(Window window) {
+    public void input(Window window, MouseInput mouseInput) {
         if (window.isKeyPressed(GLFW.GLFW_KEY_UP)) {
             direction = 1;
         } else if (window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
@@ -100,15 +168,47 @@ class TestGameLogic implements GameLogic {
         } else {
             direction = 0;
         }
+
+        cameraPosChange.set(0, 0, 0);
+        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+            cameraPosChange.z = -1;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+            cameraPosChange.z = 1;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+            cameraPosChange.x = -1;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+            cameraPosChange.x = 1;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_Z)) {
+            cameraPosChange.y = -1;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_X)) {
+            cameraPosChange.y = 1;
+        }
     }
 
     @Override
-    public void update(float interval) {
+    public void update(float interval, MouseInput mouseInput) {
         color += direction * 0.01f;
         if (color > 1) {
             color = 1.0f;
         } else if (color < 0) {
             color = 0.0f;
+        }
+        //Update camera position.
+        camera.movePosition(
+            cameraPosChange.x * CAMERA_POS_STEP,
+            cameraPosChange.y * CAMERA_POS_STEP,
+            cameraPosChange.z * CAMERA_POS_STEP
+        );
+
+        //Update based on mouse.
+        if (mouseInput.isRightButtonPressed()) {
+            Vector2f rotation = mouseInput.getDisplayVector();
+            camera.moveRotation(rotation.x * MOUSE_SENSITIVITY, rotation.y * MOUSE_SENSITIVITY, 0);
         }
     }
 
@@ -126,13 +226,15 @@ class TestGameLogic implements GameLogic {
 
         window.setClearColor(color, color, color, 0.0f);
         //renderer.clear();
-
-        DisplayObject[] displayObjects = new DisplayObject[]{
-            new DisplayObject(mesh).setRotation(0, 0, 10),
-            new DisplayObject(mesh2).setRotation(20, 0, 0)
-        };
-
-        renderer.render(window, displayObjects);
+        // Update rotation angle
+        for (DisplayObject displayObject : displayObjects) {
+            float rotation = displayObject.getRotation().x + 1.5f;
+            if (rotation > 360) {
+                rotation -= 360;
+            }
+            displayObject.setRotation(rotation, rotation, rotation);
+        }
+        renderer.render(window, displayObjects, camera);
         //renderer.render(window, mesh2);
     }
 

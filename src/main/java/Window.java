@@ -3,6 +3,7 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
 public class Window {
@@ -88,6 +89,7 @@ public class Window {
 
         //Set the clear color.
         GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GL30.glEnable(GL30.GL_DEPTH_TEST);
     }
 
     public void setClearColor(float r, float g, float b, float a) {
@@ -104,6 +106,10 @@ public class Window {
 
     public String getTitle() {
         return title;
+    }
+
+    public long getWindowHandle() {
+        return windowHandle;
     }
 
     public int getWidth() {
