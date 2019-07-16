@@ -1,8 +1,12 @@
+import graphics.Mesh;
+import graphics.Texture;
+import graphics.model.Attenuation;
+import graphics.model.Material;
+import graphics.model.PointLight;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import utils.ShaderFileUtil;
+import utils.OBJLoader;
 
 public class Main {
 
@@ -32,7 +36,7 @@ public class Main {
  * Being a separate class feels silly.
  */
 class TestGameLogic implements GameLogic {
-    private static final float CAMERA_POS_STEP = 0.01f;
+    private static final float CAMERA_POS_STEP = 0.1f;
     private static final float MOUSE_SENSITIVITY = 0.2f;
 
     private final Camera camera = new Camera();
@@ -44,6 +48,9 @@ class TestGameLogic implements GameLogic {
     private int direction = 0;
     private float color = 0.0f;
 
+    private Vector3f ambientLight;
+    private PointLight pointLight;
+
     public TestGameLogic() {
         //Empty constructor.
     }
@@ -51,7 +58,7 @@ class TestGameLogic implements GameLogic {
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
-        // Create the Mesh
+        // Create the graphics.Mesh
         float[] positions = new float[] {
             // V0
             -0.5f, 0.5f, 0.5f,
@@ -147,15 +154,32 @@ class TestGameLogic implements GameLogic {
             // Back face
             4, 6, 7, 5, 4, 7
         };
-        Texture texture = new Texture("/grassblock.png");
-        Mesh cubeMesh = new Mesh(positions, indices, textCoords, texture);
+        float[] normals = new float[]{1, 1, 1};
+        //Mesh cubeMesh = new Mesh(positions, textCoords, normals, indices);
+
+        Mesh cubeMesh = OBJLoader.loadMesh("/cube.obj");
+        //cubeMesh.setTexture(new Texture("/grassblock.png"));
+        Material material = new Material(new Texture("/grassblock.png"), 1f);
+        cubeMesh.setMaterial(material);
+
+        ambientLight = new Vector3f(0.3f, 0.3f, 0.3f);
+        Vector3f lightColor = new Vector3f(1, 1, 1);
+        Vector3f lightPosition = new Vector3f(0, 0, 1);
+        float lightIntensity = 1.0f;
+        Attenuation attenuation = new Attenuation();
+        attenuation.constant = 0.0f;
+        attenuation.linear = 0.0f;
+        attenuation.exponent = 1.0f;
+
+        pointLight = new PointLight(lightColor, lightPosition, lightIntensity, attenuation);
+
         displayObjects = new DisplayObject[]{
             new DisplayObject(
                 cubeMesh
-            ).setPosition(0, 0, -2),
+            ).setPosition(0, 0, -10),
             new DisplayObject(
                 cubeMesh
-            ).setPosition(2, 2, -4)
+            ).setPosition(10, 10, -20)
         };
     }
 
@@ -234,7 +258,9 @@ class TestGameLogic implements GameLogic {
             }
             displayObject.setRotation(rotation, rotation, rotation);
         }
-        renderer.render(window, displayObjects, camera);
+        //render(Window window, Camera camera, DisplayObject[] displayObjects, Vector3f ambientLight, PointLight pointLight) {
+
+        renderer.render(window, camera, displayObjects, ambientLight, pointLight);
         //renderer.render(window, mesh2);
     }
 
