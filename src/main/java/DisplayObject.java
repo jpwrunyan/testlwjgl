@@ -34,8 +34,9 @@ public class DisplayObject {
         return scale;
     }
 
-    public void setScale(float scale) {
+    public DisplayObject setScale(float scale) {
         this.scale = scale;
+        return this;
     }
 
     public Vector3f getRotation() {
