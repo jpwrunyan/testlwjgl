@@ -1,6 +1,4 @@
-import graphics.model.Attenuation;
-import graphics.model.Material;
-import graphics.model.PointLight;
+import graphics.model.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -45,6 +43,12 @@ public class ShaderProgram {
         uniforms.put(uniformName, uniformLocation);
     }
 
+    public void createDirectionalLightUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".color");
+        createUniform(uniformName + ".direction");
+        createUniform(uniformName + ".intensity");
+    }
+
     public void createPointLightUniform(String uniformName) throws Exception {
         createUniform(uniformName + ".color");
         createUniform(uniformName + ".position");
@@ -52,6 +56,12 @@ public class ShaderProgram {
         createUniform(uniformName + ".attenuation.constant");
         createUniform(uniformName + ".attenuation.linear");
         createUniform(uniformName + ".attenuation.exponent");
+    }
+
+    public void createSpotLightUniform(String uniformName) throws Exception {
+        createPointLightUniform(uniformName + ".pointLight");
+        createUniform(uniformName + ".direction");
+        createUniform(uniformName + ".cutoffAngle");
     }
 
     public void createMaterialUniform(String uniformName) throws Exception {
@@ -88,6 +98,12 @@ public class ShaderProgram {
         GL30.glUniform4f(uniforms.get(uniformName), color.x, color.y, color.z, color.w);
     }
 
+    public void setUniform(String uniformName, DirectionalLight directionalLight) {
+        setUniform(uniformName + ".color", directionalLight.color);
+        setUniform(uniformName + ".direction", directionalLight.direction);
+        setUniform(uniformName + ".intensity", directionalLight.intensity);
+    }
+
     public void setUniform(String uniformName, PointLight pointLight) {
         setUniform(uniformName + ".color", pointLight.color);
         setUniform(uniformName + ".position", pointLight.position);
@@ -96,6 +112,13 @@ public class ShaderProgram {
         setUniform(uniformName + ".attenuation.constant", attenuation.constant);
         setUniform(uniformName + ".attenuation.linear", attenuation.linear);
         setUniform(uniformName + ".attenuation.exponent", attenuation.exponent);
+    }
+
+    public void setUniform(String uniformName, SpotLight spotLight) {
+        setUniform(uniformName + ".pointLight", spotLight.pointLight);
+        //setUniform(uniformName + ".pointLight", 1.0f);
+        setUniform(uniformName + ".direction", spotLight.direction);
+        setUniform(uniformName + ".cutoffAngle", spotLight.cutoffAngleRadians);
     }
 
     public void setUniform(String uniformName, Material material) {

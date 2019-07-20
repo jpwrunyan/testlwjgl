@@ -1,3 +1,5 @@
+//Verified works
+
 /* Shaders are written by using the GLSL language (OpenGL Shading Language) which is based on ANSI C */
 
 /* The version of the GLSL language we are using */
@@ -21,9 +23,5 @@ void main() {
     gl_Position = projectionMatrix * mvPos;
     mvVertexNormal = normalize(modelViewMatrix * vec4(vertexNormal, 0.0)).xyz;
     mvVertexPos = mvPos.xyz;
-
-    /*
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    */
     fragTextureCoord = textureCoord;
 }

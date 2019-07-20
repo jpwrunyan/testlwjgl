@@ -1,4 +1,6 @@
+import graphics.model.DirectionalLight;
 import graphics.model.PointLight;
+import graphics.model.SpotLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -47,53 +49,6 @@ public class Renderer {
         );
         shaderProgram.link();
 
-        /*
-        Moved to graphics.Mesh class.
-        //Raw vertices for a triangle
-        float[] vertices = new float[]{
-            0.0f,  0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f
-        };
-
-        //Create the buffer in off-heap memory so that it's accessible by the OpenGL library.
-        FloatBuffer verticesBuffer = MemoryUtil.memAllocFloat(vertices.length);
-        //After we have stored the data (with the put method) we need to reset the position of the buffer to the 0 position with the flip method (that is, we say that we’ve finishing writing to it).
-        verticesBuffer.put(vertices).flip();
-
-        //Create Vertex Array Object (VAO) and bind it.
-        vaoId = GL30.glGenVertexArrays();
-        GL30.glBindVertexArray(vaoId);
-
-        //Create the Vertex Buffer Object (VBO) and bind it.
-        vboId = GL30.glGenBuffers();
-        GL30.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        GL30.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
-
-        //Define the structure of the data and store it on one of the attribute lists of the VAO.
-        //
-        //index: Specifies the location where the shader expects this data.
-        //size: Specifies the number of components per vertex attribute (from 1 to 4). In this case, we are passing 3D coordinates, so it should be 3.
-        //type: Specifies the type of each component in the array, in this case a float.
-        //normalized: Specifies if the values should be normalized or not.
-        //stride: Specifies the byte offset between consecutive generic vertex attributes. (We will explain it later).
-        //offset: Specifies an offset to the first component in the buffer.
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-
-        //After we are finished with our VBO we can unbind it and the VAO (bind them to 0).
-        //Unbind the VBO.
-        GL30.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        //Unbind the VAO.
-        GL30.glBindVertexArray(0);
-
-        //We *must* free the off-heap memory that was allocated by the FloatBuffer.
-        if (verticesBuffer != null) {
-            MemoryUtil.memFree(verticesBuffer);
-        }
-        */
-
-        //float aspectRatio = (float) window.getWidth() / window.getHeight();
-        //projectionMatrix = new Matrix4f().perspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
 
         //Initializes uniforms for projection and world matrices to be accessed by shader programs' native code.
         shaderProgram.createUniform("projectionMatrix");
@@ -108,7 +63,12 @@ public class Renderer {
         //Create lighting related uniforms.
         shaderProgram.createUniform("ambientLight");
         shaderProgram.createUniform("specularPower");
+
+        shaderProgram.createDirectionalLightUniform("directionalLight");
+
         shaderProgram.createPointLightUniform("pointLight");
+
+        shaderProgram.createSpotLightUniform("spotLight");
         //shaderProgram.createUniform("color");
         //shaderProgram.createUniform("useColorFlag");
         window.setClearColor(0, 0, 0, 0);
@@ -118,7 +78,15 @@ public class Renderer {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Window window, Camera camera, DisplayObject[] displayObjects, Vector3f ambientLight, PointLight pointLight) {
+    public void render(
+        Window window,
+        Camera camera,
+        DisplayObject[] displayObjects,
+        Vector3f ambientLight,
+        DirectionalLight directionalLight,
+        PointLight pointLight,
+        SpotLight spotLight
+    ) {
         clear();
 
         //Just a test that matrix transform works.
@@ -142,7 +110,14 @@ public class Renderer {
         shaderProgram.setUniform("ambientLight", ambientLight);
         shaderProgram.setUniform("specularPower", specularPower);
 
-        //Get a copy of the light object and transform its position to view coordinates.
+        //Get a copy of the directional light and transform its position to view coordinates.
+        DirectionalLight currentDirectionalLight = new DirectionalLight(directionalLight);
+        Vector4f dir = new Vector4f(currentDirectionalLight.direction, 0);
+        dir.mul(viewMatrix);
+        currentDirectionalLight.direction = new Vector3f(dir.x, dir.y, dir.z);
+        shaderProgram.setUniform("directionalLight", currentDirectionalLight);
+
+        //Get a copy of the point light object and transform its position to view coordinates.
         PointLight currentPointLight = new PointLight(pointLight); //Clone constructor
         Vector3f lightPos = currentPointLight.position;
         Vector4f aux = new Vector4f(lightPos, 1);
@@ -153,6 +128,20 @@ public class Renderer {
         lightPos.z = aux.z;
         shaderProgram.setUniform("pointLight", currentPointLight);
 
+        /*
+        //Get a copy of the spotlight and transform its position to view coordinates.
+        SpotLight currentSpotLight = new SpotLight(spotLight);
+        dir = new Vector4f(currentSpotLight.direction, 0);
+        dir.mul(viewMatrix);
+        currentSpotLight.direction = new Vector3f(dir.x, dir.y, dir.y);
+        lightPos = currentSpotLight.pointLight.position;
+        aux = new Vector4f(lightPos, 1);
+        aux.mul(viewMatrix);
+        lightPos.x = aux.x;
+        lightPos.y = aux.y;
+        lightPos.z = aux.z;
+        shaderProgram.setUniform("spotLight", currentSpotLight);
+        */
         //Set a global texture for now.
         //Is this still used???
         shaderProgram.setUniform("texture_sampler", 0);
