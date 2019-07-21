@@ -17,7 +17,7 @@ public class Mesh {
     private final int indicesVboId;
     private final int vertexCount;
 
-    private Texture texture;
+    //private Texture texture;
     private Material material;
 
     private Vector3f color = new Vector3f(1, 1, 1);
@@ -32,7 +32,7 @@ public class Mesh {
      */
     public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices) {
         vertexCount = indices.length;
-        this.texture = texture;
+        //this.texture = texture;
 
         //Create the VBA.
         vaoId = GL30.glGenVertexArrays();
@@ -94,26 +94,12 @@ public class Mesh {
         this.color = color;
     }
 
-    @Deprecated
-    public Texture getTexture() {
-        return texture;
-    }
-
-    @Deprecated
-    public void setTexture(Texture texture) {
-        this.texture = texture;
-    }
-
     public Material getMaterial() {
         return material;
     }
 
     public void setMaterial(Material material) {
         this.material = material;
-    }
-
-    public boolean isTextured() {
-        return texture != null;
     }
 
     public void render() {
@@ -145,13 +131,16 @@ public class Mesh {
 
     }
 
+    @Deprecated
     public int getVaoId() {
         return vaoId;
     }
 
+    @Deprecated
     public int getVertexCount() {
         return vertexCount;
     }
+
 
     public void cleanup() {
         GL30.glDisableVertexAttribArray(0);
@@ -165,7 +154,9 @@ public class Mesh {
         GL30.glDeleteBuffers(indicesVboId);
 
         //GL30.glDeleteBuffers(colorTextureVboId);
-        texture.cleanup();
+        if (material.hasTexture() == 1) {
+            material.texture.cleanup();
+        }
 
         //Delete the VAO.
         //Unbinding is probably redundant.

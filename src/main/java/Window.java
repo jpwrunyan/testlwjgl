@@ -90,6 +90,10 @@ public class Window {
         //Set the clear color.
         GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         GL30.glEnable(GL30.GL_DEPTH_TEST);
+
+        // Support for transparency
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
     }
 
     public void setClearColor(float r, float g, float b, float a) {

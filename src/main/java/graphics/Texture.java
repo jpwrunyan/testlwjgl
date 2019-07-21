@@ -13,10 +13,15 @@ import java.nio.file.Paths;
 public class Texture {
 
     public final int id;
+    public final int width;
+    public final int height;
 
-    private static int loadTexture(String filename) throws Exception {
-        int width;
-        int height;
+    /**
+     * Note: Oracle java convention seems to be camelcase fileName
+     * @param fileName
+     * @throws Exception
+     */
+    public Texture(String fileName) throws Exception {
         ByteBuffer byteBuffer;
 
         //Load texture file.
@@ -26,7 +31,7 @@ public class Texture {
             IntBuffer channels = stack.mallocInt(1);
 
             //I do not care for this way of loading files.
-            URL url = Texture.class.getResource(filename);
+            URL url = Texture.class.getResource(fileName);
             File file = Paths.get(url.toURI()).toFile();
             String filePath = file.getAbsolutePath();
             byteBuffer = STBImage.stbi_load(filePath, w, h, channels, 4);
@@ -37,22 +42,26 @@ public class Texture {
             height = h.get();
 
             //Create a new OpenGL texture.
-            int textureId = GL30.glGenTextures();
+            id = GL30.glGenTextures();
             //Bind the texture.
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, textureId);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, id);
             //Each component is one byte in size (RGBA).
             GL30.glPixelStorei(GL30.GL_UNPACK_ALIGNMENT, 1);
+
+            GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_NEAREST);
+            GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_NEAREST);
+
             //Upload texture data.
             GL30.glTexImage2D(
-                GL30.GL_TEXTURE_2D, //The target texture type
-                0, //level-of-detail number: 0 is base image level, n is nth
-                GL30.GL_RGBA, //internal format specifies the number of color components
-                width,
-                height,
-                0, //border: this value must be 0
-                GL30.GL_RGBA, //format specifies the format of pixel data
-                GL30.GL_UNSIGNED_BYTE, //type specifies the data type of pixel data
-                byteBuffer //the buffer that stores our data
+                    GL30.GL_TEXTURE_2D, //The target texture type
+                    0, //level-of-detail number: 0 is base image level, n is nth
+                    GL30.GL_RGBA, //internal format specifies the number of color components
+                    width,
+                    height,
+                    0, //border: this value must be 0
+                    GL30.GL_RGBA, //format specifies the format of pixel data
+                    GL30.GL_UNSIGNED_BYTE, //type specifies the data type of pixel data
+                    byteBuffer //the buffer that stores our data
             );
 
             //Generate mipmaps (as opposed to setting filtering parameters).
@@ -60,13 +69,7 @@ public class Texture {
 
             //Free the memory of the raw image data.
             STBImage.stbi_image_free(byteBuffer);
-
-            return textureId;
         }
-    }
-
-    public Texture(String fileName) throws Exception {
-        this.id = loadTexture(fileName);
     }
 
     public void bind() {

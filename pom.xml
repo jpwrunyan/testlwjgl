@@ -6,7 +6,7 @@
 
     <groupId>jpwrunyan</groupId>
     <artifactId>test</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>0.0.6-SNAPSHOT</version>
 
     <properties>
         <joml.version>1.9.16</joml.version>

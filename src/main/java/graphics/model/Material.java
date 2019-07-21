@@ -28,4 +28,8 @@ public class Material {
     public int hasTexture() {
         return this.texture != null ? 1 : 0;
     }
+
+    public Vector4f getAmbientColor() {
+        return DEFAULT_COLOUR;
+    }
 }

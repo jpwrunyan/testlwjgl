@@ -58,12 +58,6 @@ public class ShaderProgram {
         createUniform(uniformName + ".attenuation.exponent");
     }
 
-    public void createSpotLightUniform(String uniformName) throws Exception {
-        createPointLightUniform(uniformName + ".pointLight");
-        createUniform(uniformName + ".direction");
-        createUniform(uniformName + ".cutoffAngle");
-    }
-
     public void createMaterialUniform(String uniformName) throws Exception {
         createUniform(uniformName + ".ambient");
         createUniform(uniformName + ".diffuse");
@@ -112,13 +106,6 @@ public class ShaderProgram {
         setUniform(uniformName + ".attenuation.constant", attenuation.constant);
         setUniform(uniformName + ".attenuation.linear", attenuation.linear);
         setUniform(uniformName + ".attenuation.exponent", attenuation.exponent);
-    }
-
-    public void setUniform(String uniformName, SpotLight spotLight) {
-        setUniform(uniformName + ".pointLight", spotLight.pointLight);
-        //setUniform(uniformName + ".pointLight", 1.0f);
-        setUniform(uniformName + ".direction", spotLight.direction);
-        setUniform(uniformName + ".cutoffAngle", spotLight.cutoffAngleRadians);
     }
 
     public void setUniform(String uniformName, Material material) {

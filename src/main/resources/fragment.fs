@@ -21,12 +21,6 @@ struct PointLight {
     Attenuation attenuation;
 };
 
-struct SpotLight {
-    PointLight pointLight;
-    vec3 direction;
-    float cutoffAngle;
-};
-
 struct Material {
     vec4 ambient;
     vec4 diffuse;
@@ -34,9 +28,7 @@ struct Material {
     int hasTexture;
     float reflectance;
 };
-/*
-in vec3 color;
-*/
+
 in vec2 fragTextureCoord;
 in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
@@ -57,16 +49,8 @@ uniform DirectionalLight directionalLight;
 //A point light
 uniform PointLight pointLight;
 
-//Spotlight
-uniform SpotLight spotLight;
-
 //The material characteristics
 uniform Material material;
-
-/*
-uniform vec3 color;
-uniform int useColorFlag;
-*/
 
 /*
 These are global variables that will hold the material color components used in the ambeint, duffse, and specular components.
@@ -127,39 +111,10 @@ vec4 calcPointLight(PointLight light, vec3 position, vec3 normal) {
     return light_color / attenuationInv;
 }
 
-
-//This doesn't work AT ALL.
-vec4 calcSpotLight(SpotLight light, vec3 position, vec3 normal) {
-    vec3 light_direction = light.pointLight.position - position;
-    vec3 to_light_dir  = normalize(light_direction);
-    vec3 from_light_dir  = -to_light_dir;
-    float spot_alfa = dot(from_light_dir, normalize(light.direction));
-
-    vec4 color = vec4(0, 0, 0, 0);
-    if (spot_alfa > light.cutoffAngle) {
-        color = calcPointLight(light.pointLight, position, normal);
-        color *= (1.0 - (1.0 - spot_alfa) / (1.0 - light.cutoffAngle));
-    //    return color;
-    //} else if (isnan(spot_alfa)) {
-    //    color = calcPointLight(light.pointLight, position, normal);
-    //    return color;
-    }
-    return color;
-}
-
-
 void main() {
     setupColors(material, fragTextureCoord);
 
     vec4 diffuseSpecularComp = calcDirectionalLight(directionalLight, mvVertexPos, mvVertexNormal);
     diffuseSpecularComp += calcPointLight(pointLight, mvVertexPos, mvVertexNormal);
-    diffuseSpecularComp += calcSpotLight(spotLight, mvVertexPos, mvVertexNormal);
     fragColor = ambientC * vec4(ambientLight, 1) + diffuseSpecularComp;
-    /*
-    if (useColorFlag == 1) {
-        fragColor = vec4(color, 1.0);
-    } else {
-        fragColor = texture(texture_sampler, fragTextureCoord);
-    }
-    */
 }

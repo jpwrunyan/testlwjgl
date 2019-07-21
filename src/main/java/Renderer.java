@@ -1,20 +1,12 @@
+import display.DisplayObject;
+import display.Overlay2d;
 import graphics.model.DirectionalLight;
 import graphics.model.PointLight;
-import graphics.model.SpotLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.system.MemoryUtil;
 import utils.ShaderFileUtil;
-
-import java.awt.*;
-import java.nio.FloatBuffer;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Renderer {
     private static final float FOV = (float) Math.toRadians(60f);
@@ -25,6 +17,7 @@ public class Renderer {
     private final float specularPower = 10f;
 
     private ShaderProgram shaderProgram;
+    private ShaderProgram hudShaderProgram;
     //private int vaoId;
     //private int vboId;
 
@@ -68,10 +61,28 @@ public class Renderer {
 
         shaderProgram.createPointLightUniform("pointLight");
 
-        shaderProgram.createSpotLightUniform("spotLight");
         //shaderProgram.createUniform("color");
         //shaderProgram.createUniform("useColorFlag");
         window.setClearColor(0, 0, 0, 0);
+
+
+        setupHudShader();
+    }
+
+    private void setupHudShader() throws Exception {
+        hudShaderProgram = new ShaderProgram();
+        hudShaderProgram.createVertexShader(
+            ShaderFileUtil.loadResource("/ui.vs")
+        );
+        hudShaderProgram.createFragmentShader(
+            ShaderFileUtil.loadResource("/ui.fs")
+        );
+        hudShaderProgram.link();
+
+        // Create uniforms for Orthographic-model projection matrix and base colour
+        hudShaderProgram.createUniform("projModelMatrix");
+        hudShaderProgram.createUniform("color");
+        hudShaderProgram.createUniform("hasTexture");
     }
 
     public void clear() {
@@ -85,7 +96,7 @@ public class Renderer {
         Vector3f ambientLight,
         DirectionalLight directionalLight,
         PointLight pointLight,
-        SpotLight spotLight
+        Overlay2d hud
     ) {
         clear();
 
@@ -95,8 +106,38 @@ public class Renderer {
         if (window.isResized()) {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResized(false);
-
         }
+        renderScene(window, camera, displayObjects, ambientLight, directionalLight, pointLight);
+        renderHud(window, hud);
+    }
+
+    private void renderHud(Window window, Overlay2d hud) {
+        hudShaderProgram.bind();
+        //orthogonal projection
+        Matrix4f orthographicMatrix = transformation.getOrthographicMatrix(0, window.getWidth(), window.getHeight(), 0);
+        for (DisplayObject displayObject : hud.getDisplayObjects()) {
+            //Matrix4f modelViewMatrix = transformation.createModelViewMatrix(displayObject, viewMatrix);
+
+            // Set orthographic and model matrix for this HUD item
+            Matrix4f projModelMatrix = transformation.getOrthogonalProjModelMatrix(displayObject, orthographicMatrix);
+            hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+            hudShaderProgram.setUniform("color", displayObject.getMesh().getMaterial().getAmbientColor());
+            hudShaderProgram.setUniform("hasTexture", displayObject.getMesh().getMaterial().hasTexture());
+            // Render the mesh for this HUD item
+            displayObject.getMesh().render();
+        }
+        hudShaderProgram.unbind();
+    }
+
+    private void renderScene(
+        Window window,
+        Camera camera,
+        DisplayObject[] displayObjects,
+        Vector3f ambientLight,
+        DirectionalLight directionalLight,
+        PointLight pointLight
+    ) {
+
         shaderProgram.bind();
 
         //Update projection matrix:
@@ -128,25 +169,11 @@ public class Renderer {
         lightPos.z = aux.z;
         shaderProgram.setUniform("pointLight", currentPointLight);
 
-        /*
-        //Get a copy of the spotlight and transform its position to view coordinates.
-        SpotLight currentSpotLight = new SpotLight(spotLight);
-        dir = new Vector4f(currentSpotLight.direction, 0);
-        dir.mul(viewMatrix);
-        currentSpotLight.direction = new Vector3f(dir.x, dir.y, dir.y);
-        lightPos = currentSpotLight.pointLight.position;
-        aux = new Vector4f(lightPos, 1);
-        aux.mul(viewMatrix);
-        lightPos.x = aux.x;
-        lightPos.y = aux.y;
-        lightPos.z = aux.z;
-        shaderProgram.setUniform("spotLight", currentSpotLight);
-        */
         //Set a global texture for now.
         //Is this still used???
         shaderProgram.setUniform("texture_sampler", 0);
 
-        //Render each DisplayObject:
+        //Render each display.DisplayObject:
         for (DisplayObject displayObject : displayObjects) {
             /*
             //Set world matrix for this item:
@@ -158,13 +185,13 @@ public class Renderer {
             );
             shaderProgram.setUniform("worldMatrix", worldMatrix);
             */
-            //Set the model view matrix for this DisplayObject.
+            //Set the model view matrix for this display.DisplayObject.
             Matrix4f modelViewMatrix = transformation.createModelViewMatrix(displayObject, viewMatrix);
             shaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             //shaderProgram.setUniform("color", displayObject.getMesh().getColor());
             //shaderProgram.setUniform("useColorFlag", displayObject.getMesh().isTextured() ? 0 : 1);
             shaderProgram.setUniform("material", displayObject.getMesh().getMaterial());
-            //Render the mesh for this DisplayObject.
+            //Render the mesh for this display.DisplayObject.
             displayObject.getMesh().render();
         }
 
